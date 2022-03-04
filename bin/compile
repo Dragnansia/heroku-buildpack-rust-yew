@@ -120,7 +120,7 @@ if [ ! -x "$CARGO_HOME/bin/rustc" ]; then
 fi
 
 echo "installing trunk and wasm"
-cargo install --locked trunk
+cargo install trunk
 cargo install wasm-bindgen-cli
 rustup target add wasm32-unknown-unknown
 

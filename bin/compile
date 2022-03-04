@@ -151,6 +151,9 @@ else
   echo "-----> Skipping Cargo build"
 fi
 
+t=$(command -v trunk)
+echo "-----> trunk command path: $t"
+
 # Install diesel so we can use it for migrations
 if [ $RUST_INSTALL_DIESEL -eq 1 ]; then
   echo "-----> Installing diesel"

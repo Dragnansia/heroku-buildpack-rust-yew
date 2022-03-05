@@ -149,12 +149,6 @@ if [ $RUST_SKIP_BUILD -ne 1 ]; then
   
   echo "-----> Building frontend using trunk"
   trunk build --release
-
-  echo "-----> Install rollup"
-  npm install --global rollup
-
-  echo "-----> Build bundle.js"
-  rollup ./main.js --format iife --file ./dist/bundle.js
 else
   echo "-----> Skipping Cargo build"
 fi

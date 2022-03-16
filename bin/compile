@@ -14,9 +14,9 @@ if [ -e "$ENV_DIR/DATABASE_URL" ]; then
   export DATABASE_URL="$(cat $ENV_DIR/DATABASE_URL)";
 fi
 
-# Set defaults for our configuration variables.  Stable Rust is sufficiently
+# Set defaults for our configuration variables. Stable Rust is sufficiently
 # stable at this point that I think we can just default it.
-VERSION=stable
+VERSION=nightly
 
 # Set this to "1" in `RustConfig` to just install a Rust toolchain and not
 # build `Cargo.toml`.  This is useful if you have a project written in Ruby
@@ -25,13 +25,6 @@ RUST_SKIP_BUILD=0
 # If your Rust code is not at the root directory of the repository, specify a
 # `BUILD_PATH` to the correct directory in the `RustConfig`
 BUILD_PATH=""
-# Set this to "1" in `RustConfig` to install diesel at build time and copy it
-# into the target directory, next to your app binary. This makes it easy to
-# run migrations by adding a release step to your Procfile:
-# `release: ./target/release/diesel migration run`
-RUST_INSTALL_DIESEL=0
-# These flags are passed to `cargo install diesel`, e.g. '--no-default-features --features postgres'
-DIESEL_FLAGS=""
 # Default build flags to pass to `cargo build`.
 RUST_CARGO_BUILD_FLAGS="--release"
 
@@ -57,12 +50,12 @@ fi
 # Notify users running old, unstable versions of Rust about how to deploy
 # successfully.
 if [ $RUST_SKIP_BUILD -ne 1  ] && ( [ ! -z ${CARGO_URL+x} ] || [ ! -f "$BUILD_DIR/$BUILD_PATH/Cargo.toml" ] ); then
-    >&2 cat <<EOF
-To deploy a modern Rust app, make sure you have a Cargo.toml file, and that
-you do not define CARGO_URL or CARGO_VERSION in RustConfig.  If you're
-using an older version of Rust, and you need to re-deploy an existing
-application, try setting your buildpack to:
-  https://github.com/emk/heroku-buildpack-rust.git#old-rust
+    >&2 cat << EOF
+      To deploy a modern Rust app, make sure you have a Cargo.toml file, and that
+      you do not define CARGO_URL or CARGO_VERSION in RustConfig.  If you're
+      using an older version of Rust, and you need to re-deploy an existing
+      application, try setting your buildpack to:
+        https://github.com/emk/heroku-buildpack-rust.git#old-rust
 EOF
     exit 1
 fi
@@ -70,9 +63,9 @@ fi
 # Handle people who still aren't using Rustup.
 if [ ! -z ${URL+x} ]; then
     >&2 cat <<EOF
-heroku-pack-rust has switched to using rustup.  You no longer need a
-URL field in RustConfig. Instead, you should just specify a
-rustup-compatible version (such as `1.11`, `stable` or `nighty`) in VERSION.
+      heroku-pack-rust has switched to using rustup.  You no longer need a
+      URL field in RustConfig. Instead, you should just specify a
+      rustup-compatible version (such as `1.11`, `stable` or `nighty`) in VERSION.
 EOF
     exit 1
 fi
@@ -81,13 +74,13 @@ fi
 # case another buildpack needs it to build Ruby gems that use Rust or
 # something like that.
 cat <<EOF > $BP_DIR/export
-# Our rustup installation.
-export RUSTUP_HOME="$CACHE_DIR/multirust"
-# Our cargo installation.  We implicitly trust Rustup and Cargo
-# to do the right thing when new versions are released.
-export CARGO_HOME="$CACHE_DIR/cargo"
-# Include binaries installed by cargo and rustup in our path.
-PATH="\$CARGO_HOME/bin:\$PATH"
+  # Our rustup installation.
+  export RUSTUP_HOME="$CACHE_DIR/multirust"
+  # Our cargo installation.  We implicitly trust Rustup and Cargo
+  # to do the right thing when new versions are released.
+  export CARGO_HOME="$CACHE_DIR/cargo"
+  # Include binaries installed by cargo and rustup in our path.
+  PATH="\$CARGO_HOME/bin:\$PATH"
 EOF
 
 # Read our build environment back in and evaluate it so that we can use it.
@@ -143,19 +136,18 @@ if [ $RUST_SKIP_BUILD -ne 1 ]; then
 
   rm -rf target/
   cargo build $RUST_CARGO_BUILD_FLAGS
-  
+
   mkdir -p target/release
   find "$CARGO_TARGET_DIR/release" -maxdepth 1 -type f -executable -exec cp -a -t target/release {} \;
-  
+
+  echo "-----> Go to client folder"
+  cd client
+
   echo "-----> Building frontend using trunk"
   trunk build --release
+
+  echo "-----> Return to project folder"
+  cd ..
 else
   echo "-----> Skipping Cargo build"
-fi
-
-# Install diesel so we can use it for migrations
-if [ $RUST_INSTALL_DIESEL -eq 1 ]; then
-  echo "-----> Installing diesel"
-  cargo install diesel_cli $DIESEL_FLAGS || echo "already installed"
-  cp $(which diesel) target/release/
 fi
